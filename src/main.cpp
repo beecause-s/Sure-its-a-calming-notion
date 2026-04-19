@@ -3,51 +3,61 @@
 
 using namespace geode::prelude;
 
-// Minimalistic fields to track the 10 TPS gap
-class $modify(MyExtrapolatedLayer, GJBaseGameLayer) {
+// Define the module setup inside a class for easier toggling
+class FrameExtrapolation : public CCNode {
+public:
+    static bool isEnabled() {
+        return Mod::get()->getSettingValue<bool>("enabled");
+    }
+};
+
+class $modify(ExtrapolatedLayer, GJBaseGameLayer) {
     struct Fields {
-        float m_acc = 0.0f;
-        float m_physDelta = 0.0f;
-        bool m_ticked = false;
+        float m_accumulator = 0.0f;
+        float m_physicsDelta = 0.0f;
+        bool m_didTick = false;
     };
 
     float getModifiedDelta(float dt) {
-        float delta = GJBaseGameLayer::getModifiedDelta(dt);
-        if (delta > 0) {
-            m_fields->m_physDelta = delta;
-            m_fields->m_ticked = true;
+        float pRet = GJBaseGameLayer::getModifiedDelta(dt);
+        // pRet > 0 means the game actually processed a physics step
+        if (pRet > 0) {
+            m_fields->m_physicsDelta = pRet;
+            m_fields->m_didTick = true;
         }
-        return delta;
+        return pRet;
     }
 
     void update(float dt) {
         GJBaseGameLayer::update(dt);
 
+        if (!FrameExtrapolation::isEnabled()) return;
         if (!m_player1) return;
 
-        // Track how far we are between the 100ms physics steps
-        if (m_fields->m_ticked) {
-            m_fields->m_acc = 0.0f;
-            m_fields->m_ticked = false;
+        // Reset timer when physics updates, otherwise track frame time since last tick
+        if (m_fields->m_didTick) {
+            m_fields->m_accumulator = 0.0f;
+            m_fields->m_didTick = false;
         } else {
-            m_fields->m_acc += dt;
+            m_fields->m_accumulator += dt;
         }
 
-        // Avoid division by zero
-        if (m_fields->m_physDelta <= 0) return;
+        // Avoid division by zero and clamp to 1.0
+        if (m_fields->m_physicsDelta <= 0) return;
+        float alpha = std::min(m_fields->m_accumulator / m_fields->m_physicsDelta, 1.0f);
 
-        float alpha = m_fields->m_acc / m_fields->m_physDelta;
-        if (alpha > 1.0f) alpha = 1.0f;
-
-        // Apply smooth slide
-        auto extrapolate = [&](PlayerObject* p) {
+        // Perform the visual slide
+        auto applyExtrapolation = [&](PlayerObject* p) {
             if (!p) return;
-            float x = p->m_velocity.x * m_fields->m_physDelta * alpha;
-            float y = p->m_velocity.y * m_fields->m_physDelta * alpha;
-            p->setPosition(p->getPositionX() + x, p->getPositionY() + y);
+            
+            // On Android 2.208, velocity is typically in the m_velocity CCPoint
+            float offX = p->m_velocity.x * m_fields->m_physicsDelta * alpha;
+            float offY = p->m_velocity.y * m_fields->m_physicsDelta * alpha;
+
+            p->setPosition(p->getPositionX() + offX, p->getPositionY() + offY);
         };
 
-        extrapolate(m_player1);
-        extrapolate(m_player2);
+        applyExtrapolation(m_player1);
+        if (m_player2) applyExtrapolation(m_player2);
     }
 };
