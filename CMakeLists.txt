@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(frame_extrapolation)
 
-find_package(Geode CONFIG REQUIRED)
+find_package(Geode CONFIG REQUIRED PATHS ${GEODE_SDK_ROOT})
 
 add_geode_mod(
     ${frame.extrapolation.beecause-s}
