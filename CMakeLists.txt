@@ -5,7 +5,7 @@ project(frame_extrapolation)
 find_package(Geode CONFIG REQUIRED)
 
 add_geode_mod(
-    ${PROJECT_ID}
-    ${PROJECT_VERSION}
+    ${frame.extrapolation.beecause-s}
+    ${1.0.0}
     SOURCES main.cpp
 )
