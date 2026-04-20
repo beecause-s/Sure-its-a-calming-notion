@@ -1,30 +1,17 @@
-name: Build Geode Mod
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-        - name: Android
-          os: ubuntu-latest
-          target: Android
-        - name: Windows
-          os: windows-latest
-          target: Windows
-
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v4
+
+      # THIS STEP IS MISSING:
+      - name: Setup Geode SDK
+        uses: geode-sdk/setup-geode-sdk@main
+        with:
+          # This tells it to use the version specified in your mod.json
+          version: v3.0.0-beta.1
 
       - name: Build Mod
         uses: geode-sdk/build-geode-mod@main
         with:
+          # This links the setup step to the build step
+          sdk: ${{ steps.setup-geode-sdk.outputs.sdk-path }}
           platform: ${{ matrix.config.target }}
           
