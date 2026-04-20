@@ -1,32 +1,11 @@
-name: Build Geode Mod
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
-jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - name: Android
-            os: ubuntu-latest
-            target: Android
-          - name: Windows
-            os: windows-latest
-            target: Windows
-
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Geode SDK
         id: setup-sdk
-        uses: geode-sdk/setup-geode-sdk@main
+        uses: geode-sdk/build-geode-mod@main
         with:
+          setup-only: true
           version: v3.0.0-beta.1
 
       - name: Build Mod
