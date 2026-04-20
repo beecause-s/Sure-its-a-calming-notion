@@ -23,14 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # THIS STEP INSTALLS THE FILES CMake IS LOOKING FOR
-      - name: Setup Geode SDK
-        uses: geode-sdk/setup-geode-sdk@v3.0.0-beta.1
-        id: setup-sdk
-
       - name: Build Geode Mod
         uses: geode-sdk/build-geode-mod@main
         with:
-          sdk: ${{ steps.setup-sdk.outputs.sdk-path }}
           platform: ${{ matrix.config.target }}
           
